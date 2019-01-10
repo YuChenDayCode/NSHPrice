@@ -1,0 +1,177 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <title>价格监控</title>
+    <link href="~/Contents/layui/css/layui.css" rel="stylesheet" />
+    <script src="~/Contents/layui/layui.js"></script>
+    <script src="~/Contents/jquery-3.3.1.js"></script>
+    <script src="~/Contents/highcharts.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei';
+            font-size: 12px;
+            margin: 0;
+            background: #fff url(/Content/Img/bg.png) top center no-repeat;
+            background-size: 100% auto;
+        }
+
+        select, input {
+            border-width: 1px;
+            height: 38px;
+            line-height: 1.3;
+            border-color: #e6e6e6;
+            border-style: solid;
+            background-color: #fff;
+            border-radius: 2px;
+            width: 30%;
+        }
+        .money {
+        text-align:center;
+        margin-top: 30px;
+        }
+        .unit {
+            position: relative;
+            color: #b7b7b7;
+            right: 15px;
+        }
+
+        #calcprice {
+            display:inline-block;
+            width: 150px;
+            height: 150px;
+            line-height: 150px;
+            margin: 0 auto 10px;
+            text-align: center;
+            background-color: #FFB800;
+            color: #fff;
+            border-radius: 50%;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $(function () {
+            GetArea();
+            GetUnitPrice(9);
+            Chart(9);
+            $('#areaSlt').on('change', function () {
+                var id = $('#areaSlt').val();
+                Chart(id);
+                GetUnitPrice(id);
+            });
+        })
+
+        var GetArea = function () {
+            $.ajax('/Price/GetArea').done(function (data) {
+               // console.log(data);
+                $.each(data, function (i, t) {
+                    $('#areaSlt').append($("<option></option>").val(t.Id).html(t.AreaName));
+                });
+            });
+        }
+
+        var GetUnitPrice = function (id) {
+            $.ajax('/Price/GetPriceInfo?id=' + id)
+            .done(function (data) {
+               // console.info(data);
+                model = data[0];
+                $('#calcprice').html(model.UnitPrice + "元/万");
+                //$('#calcprice').attr('title', model.AreaName + '当前汇率' + model.UnitPrice + "元/万");
+
+                binds(model.UnitPrice);
+            })
+            .fail(function (err) {
+                console.log(err);
+            });
+        }
+
+        var Chart = function (id) {
+            $.ajax('/Price/GetPriceInfoList?id=' + id)
+                .done(function (data) {
+                    console.log(data);
+                    var chart = Highcharts.chart('container', {
+                        chart: {
+                            type: 'line'
+                        },
+                        title: {
+                            text: '金价走势'
+                        },
+                        //subtitle: {
+                        //    text: '数据来源: https://n.cbg.163.com'
+                        //},
+                        xAxis: {
+                            categories: data.time//['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+                        },
+                        yAxis: {
+                            title: {
+                                text: '单价'
+                            }
+                        },
+                        plotOptions: {
+                            line: {
+                                dataLabels: {
+                                    enabled: true// 开启数据标签
+                                },
+                                enableMouseTracking: false // 关闭鼠标跟踪，对应的提示框、点击事件会失效
+                            }
+                        },
+                        series: [{
+                            name: data.AreaName,
+                            data: data.price//[7.0, 6.9, 9.5, 14.5, 18.4, 21.5, 25.2, 26.5, 23.3, 18.3, 13.9, 9.6]
+                        }]
+                    });
+                });
+        }
+
+        var binds = function (price) {
+
+            $('#rmb').on('input', function (e) {
+                var num = $('#rmb').val() / price;
+                $('#copper').val(num.toFixed(2));
+            });
+
+            $('#copper').on('input', function (e) {
+                var num = $('#copper').val() * price;
+                $('#rmb').val(num.toFixed(2));
+            });
+
+        }
+
+    </script>
+</head>
+<body>
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>计算价格</legend>
+    </fieldset>
+
+    <div style="text-align:center;margin-bottom:20px;">
+        <select id="areaSlt" style="height:40px;width:95%;border-radius: 4px;">
+            <option value="">请选择区服</option>
+        </select>
+    </div>
+
+    <div class="money" >
+        <input type="text" placeholder="￥" title="人民币" id="rmb" autocomplete="off"><span class="unit">元</span>
+        <div class="layui-anim" id="calcprice"> </div>
+        &nbsp;<input type="text" placeholder="⊙" title="铜币" id="copper" autocomplete="off"><span class="unit">万</span>
+    </div>
+
+
+    <div id="container" style="min-width:400px;height:400px"></div>
+
+
+
+    <div style="text-align:center;margin-top:40px;">
+        <a style="width:150px; height:20px;font-size:15px;color:#72ACE3" target="_blank" href="https://n.cbg.163.com/?serverid=9&order=unit_price+ASC">打开官方藏宝阁</a>
+    </div>
+</body>
+</html>
