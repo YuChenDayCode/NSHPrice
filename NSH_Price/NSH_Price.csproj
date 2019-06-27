@@ -195,7 +195,9 @@
     <Content Include="Contents\layui\lay\modules\upload.js" />
     <Content Include="Contents\layui\lay\modules\util.js" />
     <Content Include="Global.asax" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
